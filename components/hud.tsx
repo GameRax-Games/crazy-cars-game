@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { gameStore } from "@/lib/game-store"
+import { gameStore, type CarState } from "@/lib/game-store"
 import { Star, RotateCcw, Home } from "lucide-react"
 import type { TouchControls } from "@/components/car"
 
@@ -11,9 +11,10 @@ interface HudProps {
   onReset: () => void
   onMenu: () => void
   touch: React.MutableRefObject<TouchControls>
+  store?: CarState
 }
 
-export function Hud({ collected, total, onReset, onMenu, touch }: HudProps) {
+export function Hud({ collected, total, onReset, onMenu, touch, store = gameStore }: HudProps) {
   const [speed, setSpeed] = useState(0)
   const [air, setAir] = useState(false)
   const speedRef = useRef<HTMLSpanElement>(null)
@@ -21,13 +22,13 @@ export function Hud({ collected, total, onReset, onMenu, touch }: HudProps) {
   useEffect(() => {
     let raf = 0
     const loop = () => {
-      setSpeed(Math.round(gameStore.speed * 3.6))
-      setAir(gameStore.airborne)
+      setSpeed(Math.round(store.speed * 3.6))
+      setAir(store.airborne)
       raf = requestAnimationFrame(loop)
     }
     raf = requestAnimationFrame(loop)
     return () => cancelAnimationFrame(raf)
-  }, [])
+  }, [store])
 
   const setKey = (key: keyof TouchControls, val: boolean) => {
     touch.current[key] = val

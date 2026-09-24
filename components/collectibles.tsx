@@ -4,7 +4,7 @@ import { useMemo, useRef } from "react"
 import { useFrame } from "@react-three/fiber"
 import * as THREE from "three"
 import { groundHeight, WORLD_BOUND, ramps, MOUNT } from "@/lib/track"
-import { gameStore } from "@/lib/game-store"
+import type { CarState } from "@/lib/game-store"
 
 interface StarData {
   id: number
@@ -47,7 +47,7 @@ function makeStars(): StarData[] {
 
 export const STAR_COUNT = makeStars().length
 
-function Star({ data, onCollect }: { data: StarData; onCollect: (id: number) => void }) {
+function Star({ data, store, onCollect }: { data: StarData; store: CarState; onCollect: (id: number) => void }) {
   const ref = useRef<THREE.Group>(null)
   const collected = useRef(false)
 
@@ -55,9 +55,9 @@ function Star({ data, onCollect }: { data: StarData; onCollect: (id: number) => 
     if (!ref.current || collected.current) return
     ref.current.rotation.y += delta * 2
     ref.current.position.y = data.pos.y + Math.sin(state.clock.elapsedTime * 2 + data.id) * 0.25
-    const dx = gameStore.carPos.x - data.pos.x
-    const dy = gameStore.carPos.y + 0.8 - ref.current.position.y
-    const dz = gameStore.carPos.z - data.pos.z
+    const dx = store.carPos.x - data.pos.x
+    const dy = store.carPos.y + 0.8 - ref.current.position.y
+    const dz = store.carPos.z - data.pos.z
     if (dx * dx + dy * dy + dz * dz < 9) {
       collected.current = true
       ref.current.visible = false
@@ -76,13 +76,21 @@ function Star({ data, onCollect }: { data: StarData; onCollect: (id: number) => 
   )
 }
 
-export function Collectibles({ onCollect, resetSignal }: { onCollect: (id: number) => void; resetSignal: number }) {
+export function Collectibles({
+  store,
+  onCollect,
+  resetSignal,
+}: {
+  store: CarState
+  onCollect: (id: number) => void
+  resetSignal: number
+}) {
   // reset creates fresh stars by remounting via key in parent
   const stars = useMemo(() => makeStars(), [])
   return (
     <group key={resetSignal}>
       {stars.map((s) => (
-        <Star key={s.id} data={s} onCollect={onCollect} />
+        <Star key={s.id} data={s} store={store} onCollect={onCollect} />
       ))}
     </group>
   )

@@ -4,6 +4,8 @@ import { Canvas } from "@react-three/fiber"
 import { Sky } from "@react-three/drei"
 import type { CarConfig } from "@/lib/cars"
 import type { Keys } from "@/lib/use-keyboard"
+import type { ControlScheme } from "@/lib/controls"
+import type { CarState } from "@/lib/game-store"
 import { Car, type TouchControls } from "@/components/car"
 import { World } from "@/components/world"
 import { Collectibles } from "@/components/collectibles"
@@ -11,12 +13,14 @@ import { Collectibles } from "@/components/collectibles"
 interface GameCanvasProps {
   config: CarConfig
   keys: React.MutableRefObject<Keys>
-  touch: React.MutableRefObject<TouchControls>
+  controls: ControlScheme
+  store: CarState
+  touch?: React.MutableRefObject<TouchControls>
   resetSignal: number
   onCollect: (id: number) => void
 }
 
-export function GameCanvas({ config, keys, touch, resetSignal, onCollect }: GameCanvasProps) {
+export function GameCanvas({ config, keys, controls, store, touch, resetSignal, onCollect }: GameCanvasProps) {
   return (
     <Canvas shadows camera={{ fov: 60, near: 0.1, far: 1000, position: [0, 8, -14] }} dpr={[1, 1.75]}>
       <color attach="background" args={["#87ceeb"]} />
@@ -39,8 +43,8 @@ export function GameCanvas({ config, keys, touch, resetSignal, onCollect }: Game
       />
 
       <World />
-      <Collectibles onCollect={onCollect} resetSignal={resetSignal} />
-      <Car config={config} keys={keys} touch={touch} resetSignal={resetSignal} />
+      <Collectibles store={store} onCollect={onCollect} resetSignal={resetSignal} />
+      <Car config={config} keys={keys} controls={controls} store={store} touch={touch} resetSignal={resetSignal} />
     </Canvas>
   )
 }

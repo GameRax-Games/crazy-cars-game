@@ -5,8 +5,9 @@ import { useFrame, useThree } from "@react-three/fiber"
 import * as THREE from "three"
 import type { CarConfig } from "@/lib/cars"
 import type { Keys } from "@/lib/use-keyboard"
+import type { ControlScheme } from "@/lib/controls"
 import { groundHeight, WORLD_BOUND } from "@/lib/track"
-import { gameStore } from "@/lib/game-store"
+import type { CarState } from "@/lib/game-store"
 
 export interface TouchControls {
   forward: boolean
@@ -19,7 +20,9 @@ export interface TouchControls {
 interface CarProps {
   config: CarConfig
   keys: React.MutableRefObject<Keys>
-  touch: React.MutableRefObject<TouchControls>
+  controls: ControlScheme
+  store: CarState
+  touch?: React.MutableRefObject<TouchControls>
   resetSignal: number
 }
 
@@ -31,7 +34,7 @@ const wheelPositions: [number, number][] = [
   [0.7, -1.05],
 ]
 
-export function Car({ config, keys, touch, resetSignal }: CarProps) {
+export function Car({ config, keys, controls, store, touch, resetSignal }: CarProps) {
   const group = useRef<THREE.Group>(null)
   const body = useRef<THREE.Group>(null)
   const { camera } = useThree()
@@ -61,10 +64,13 @@ export function Car({ config, keys, touch, resetSignal }: CarProps) {
     }
 
     const k = keys.current
-    const t = touch.current
-    const accelIn = (k["w"] || k["arrowup"] || t.forward ? 1 : 0) - (k["s"] || k["arrowdown"] || t.back ? 1 : 0)
-    const steerIn = (k["a"] || k["arrowleft"] || t.left ? 1 : 0) - (k["d"] || k["arrowright"] || t.right ? 1 : 0)
-    const braking = k[" "] || t.brake
+    const t = touch?.current
+    const pressed = (arr: string[]) => arr.some((key) => k[key])
+    const accelIn =
+      (pressed(controls.forward) || t?.forward ? 1 : 0) - (pressed(controls.back) || t?.back ? 1 : 0)
+    const steerIn =
+      (pressed(controls.left) || t?.left ? 1 : 0) - (pressed(controls.right) || t?.right ? 1 : 0)
+    const braking = pressed(controls.brake) || t?.brake
 
     const airborne = pos.current.y > prevGround.current + 0.4
 
@@ -127,9 +133,9 @@ export function Car({ config, keys, touch, resetSignal }: CarProps) {
     }
 
     // Publish state
-    gameStore.carPos.copy(pos.current)
-    gameStore.speed = Math.abs(speed.current)
-    gameStore.airborne = airborne
+    store.carPos.copy(pos.current)
+    store.speed = Math.abs(speed.current)
+    store.airborne = airborne
 
     // Camera follow
     const camTarget = new THREE.Vector3(
